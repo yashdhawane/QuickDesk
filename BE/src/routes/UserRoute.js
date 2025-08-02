@@ -12,6 +12,6 @@ userRouter.post('/register', UserController.registerUser);
 userRouter.post('/login', UserController.login);
 userRouter.post('/createTicket', authMiddleware,UserController.createTicket);
 userRouter.post('/createTagCategory', UserController.createTagCategory);
-
+userRouter.post('/assignTicket/:id', authMiddleware, UserController.assignTicket);
 
 module.exports = userRouter;
