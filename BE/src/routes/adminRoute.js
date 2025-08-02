@@ -1,10 +1,13 @@
 const express = require('express');
 const adminRouter = express.Router();
-const { getadmin } = require('../controller/adminController');
+const adminRoutes = require('../controller/adminController');
 
 // GET /users
-adminRouter.get('/', getadmin);
-
+adminRouter.get('/', adminRoutes.getadmin);
+adminRouter.get('/getTicketsCounts', adminRoutes.getTicketsCounts);
+adminRouter.get('/getTicketCountPerUser',adminRoutes.getTicketCountPerUser);
+adminRouter.post('/getTicketsFromLastXHours', adminRoutes.getTicketsFromLastXHours);
+adminRouter.post('/getTicketCountsByInterval', adminRoutes.getTicketCountsByInterval);
 
 
 module.exports = adminRouter;
