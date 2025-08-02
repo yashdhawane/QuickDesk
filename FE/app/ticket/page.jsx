@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,10 +12,15 @@ import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
 import TicketCard from "@/components/tickets/TicketCard"
 import { Search, Plus, Filter, ChevronLeft, ChevronRight } from "lucide-react"
+import { BASE_URL } from "@/lib/constants/constants"
 
 export default function TicketsPage() {
+
+  const [categories, setCategories] = useState([])
+
   const {
     tickets,
+    fetchTickets,
     filters,
     searchQuery,
     currentPage,
@@ -27,27 +32,34 @@ export default function TicketsPage() {
     setTicketsPerPage,
   } = useApp()
 
+  const fetchTags = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/users/getAllTags`)
+      if (!response.ok) throw new Error("Failed to fetch tags")
+      const data = await response.json()
+      // console.log(data)
+      let categories_list = data.tags.map(tag => tag.categoryName)
+      setCategories(categories_list)
+    } catch (error) {
+      console.error("Error fetching tags:", error)
+    }
+  }
+
+
+  useEffect(() => {
+    fetchTags()
+    fetchTickets()
+  }, [])
+
+
+
+  // console.log(tickets)
+
   const [showMobileFilters, setShowMobileFilters] = useState(false)
 
-  const categories = [
-    "mobile",
-    "login",
-    "bug",
-    "feature",
-    "ui",
-    "enhancement",
-    "payment",
-    "error",
-    "critical",
-    "documentation",
-    "api",
-    "improvement",
-    "performance",
-    "dashboard",
-    "optimization",
-  ]
   const statuses = ["Open", "In Progress", "Resolved", "Closed"]
-  const sortOptions = ["Most Comments", "Most Upvotes", "Newest", "Oldest"]
+  // const sortOptions = ["Most Comments", "Most Upvotes", "Newest", "Oldest"]
+  const sortOptions = ["Newest", "Oldest"]
 
   const filteredTickets = useMemo(() => {
     let filtered = [...tickets]
@@ -157,16 +169,6 @@ export default function TicketsPage() {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="open-only"
-                        checked={filters.showOpenOnly}
-                        onCheckedChange={(checked) => handleFilterChange("showOpenOnly", checked)}
-                      />
-                      <label htmlFor="open-only" className="text-sm font-medium">
-                        Show Open Tickets Only
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
                         id="my-tickets"
                         checked={filters.showMyTicketsOnly}
                         onCheckedChange={(checked) => handleFilterChange("showMyTicketsOnly", checked)}
@@ -178,23 +180,27 @@ export default function TicketsPage() {
                   </div>
 
                   {/* Categories */}
-                  <div>
-                    <h3 className="font-medium mb-3">Categories</h3>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {categories.map((category) => (
-                        <div key={category} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`category-${category}`}
-                            checked={filters.categories.includes(category)}
-                            onCheckedChange={() => handleCategoryToggle(category)}
-                          />
-                          <label htmlFor={`category-${category}`} className="text-sm">
-                            {category}
-                          </label>
+                  {
+                    categories.length > 0 && (
+                      <div>
+                        <h3 className="font-medium mb-3">Categories</h3>
+                        <div className="space-y-2">
+                          {categories.map((category) => (
+                            <div key={category} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`category-${category}`}
+                                checked={filters.categories.includes(category)}
+                                onCheckedChange={() => handleCategoryToggle(category)}
+                              />
+                              <label htmlFor={`category-${category}`} className="text-sm">
+                                {category}
+                              </label>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
+                    )
+                  }
 
                   {/* Status */}
                   <div>
@@ -269,10 +275,11 @@ export default function TicketsPage() {
                 </p>
               </div>
 
+              {console.log(paginatedTickets)}
               {/* Tickets List */}
               <div className="space-y-4 mb-8 flex flex-col">
                 {paginatedTickets.length > 0 ? (
-                  paginatedTickets.map((ticket) => <TicketCard key={ticket.id} ticket={ticket} />)
+                  paginatedTickets.map((ticket) => <TicketCard key={ticket._id} ticket={ticket} />)
                 ) : (
                   <Card>
                     <CardContent className="text-center py-12">
@@ -287,7 +294,7 @@ export default function TicketsPage() {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
+              {/* {totalPages > 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">Show:</span>
@@ -357,7 +364,7 @@ export default function TicketsPage() {
                     </Button>
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>

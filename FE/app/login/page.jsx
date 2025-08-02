@@ -8,55 +8,71 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useApp } from "@/context/AppContext"
 import Navbar from "@/components/layout/Navbar"
 import { ArrowLeft } from "lucide-react"
+import axios from "axios"
+import { BASE_URL } from "@/lib/constants/constants"
+import { useApp } from "@/context/AppContext"
 
 export default function LoginPage() {
   const [loginData, setLoginData] = useState({ email: "", password: "" })
   const [signupData, setSignupData] = useState({ name: "", email: "", password: "", confirmPassword: "" })
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useApp()
+  const [errorText, setErrorText] = useState("")
   const router = useRouter()
+
+  const { setUserObj, setAccessToken, setAuthenticated } = useApp()
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setIsLoading(true)
     try {
       // Use backend login from context
-      await login(loginData)
-      setIsLoading(false)
+      const response = await axios.post(`${BASE_URL}/users/login`, loginData)
+      console.log("Login response:", response.data)
+
+      const { token, user } = response.data
+
+      // Store token in localStorage
+      localStorage.setItem("quickdesk_token", token)
+      localStorage.setItem("quickdesk_user", JSON.stringify(user))
+
+      
+      // saving the data in state variables
+      setAuthenticated(true)
+      setUserObj(user)
+      setAccessToken(token)
+
       router.push("/ticket")
     } catch (err) {
+      setErrorText("Login failed. Please check your credentials.")
+    } finally {
       setIsLoading(false)
-      alert("Login failed. Please check your credentials.")
     }
   }
 
   const handleSignup = async (e) => {
     e.preventDefault()
     if (signupData.password !== signupData.confirmPassword) {
-      alert("Passwords do not match")
+      setErrorText("Passwords do not match")
       return
     }
-
     setIsLoading(true)
+    const userData = {
+      name: signupData.name,
+      email: signupData.email,
+      password: signupData.password,
+    }
 
-    // Simulate API call for signup (replace with real API if available)
-    setTimeout(() => {
-      const userData = {
-        id: "1",
-        name: signupData.name,
-        email: signupData.email,
-        role: "End User",
-        categoryInterest: "General",
-        language: "English",
-        avatar: null,
-      }
-      login(userData)
+    try {
+      const response = await axios.post(`${BASE_URL}/users/register`, userData)
+      router.push("/login")
+    }
+    catch (error) {
+      setErrorText(error.response?.data?.message || "An error occurred during signup")
+    } finally {
       setIsLoading(false)
-      router.push("/profile")
-    }, 1000)
+    }
   }
 
   return (
@@ -120,13 +136,13 @@ export default function LoginPage() {
                     <h4 className="font-medium text-blue-900 mb-2">Demo Credentials:</h4>
                     <div className="text-sm text-blue-800 space-y-1">
                       <p>
-                        <strong>Admin:</strong> admin@quickdesk.com / admin123
+                        <strong>Admin:</strong> admin@gmail.com / admin123
                       </p>
                       <p>
-                        <strong>Support Agent:</strong> support@quickdesk.com / support123
+                        <strong>Support Agent:</strong> support@gmail.com / support123
                       </p>
                       <p>
-                        <strong>End User:</strong> user@quickdesk.com / user123
+                        <strong>End User:</strong> user@gmail.com / user123
                       </p>
                     </div>
                   </div>
@@ -178,6 +194,11 @@ export default function LoginPage() {
                         required
                       />
                     </div>
+                    {
+                      errorText && (
+                        <span className="text-red-500 text-sm flex items-center -mt-3">{errorText}</span>
+                      )
+                    }
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Creating account..." : "Create Account"}
                     </Button>

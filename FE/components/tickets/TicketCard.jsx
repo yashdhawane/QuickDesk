@@ -41,11 +41,11 @@ export default function TicketCard({ ticket }) {
   const handleVote = (voteType, e) => {
     e.preventDefault();
     e.stopPropagation();
-    voteOnTicket(ticket.id, voteType);
+    voteOnTicket(ticket._id, voteType);
   };
 
   return (
-    <Link href={`/ticket/${ticket.id}`} className="">
+    <Link href={`/ticket/${ticket._id}`} className="">
       <Card className="hover:shadow-md transition-shadow duration-200 cursor-pointer">
         <CardContent className="px-6">
           <div className="flex items-center justify-between gap-4">
@@ -54,7 +54,7 @@ export default function TicketCard({ ticket }) {
               <div className="flex items-center gap-2 mb-2 justify-between">
                 <h3 className="font-semibold text-gray-900 truncate">
                   {ticket.title}
-                  <span className="text-gray-500 text-sm"> &nbsp; # {ticket.id}</span>
+                  <span className="text-gray-500 text-xs"> &nbsp; # {ticket._id}</span>
                 </h3>
                 <h3 className="text-gray-500 text-sm">
                   <span
@@ -70,26 +70,32 @@ export default function TicketCard({ ticket }) {
                 </h3>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-3">
-                {ticket.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
-                    {tag}
+              <div className="flex flex-wrap gap-2 mb-3 text-gray-500">
+                {ticket.tag.map((t) => (
+                  <Badge key={t} variant="secondary" className="text-xs">
+                    {t}
                   </Badge>
                 ))}
               </div>
 
-              <div className="flex items-center gap-10 text-sm text-gray-600">
+              <div className="flex items-center gap-10 text-xs text-gray-600 mt-6">
                 <div className="flex items-center gap-1">
                   <span>Created by: </span>
                   <User className="w-4 h-4" />
-                  <span>{ticket.author}</span>
+                  <span>{ticket.createdBy.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span>Assigned to: </span>
                   <User className="w-4 h-4" />
-                  <span>{ticket.assignedTo}</span>
+                  {
+                    ticket.assignedTo ? (
+                      <span>{ticket.assignedTo.name}</span>
+                    ) : (
+                      <span className="text-gray-400">Unassigned</span>
+                    )
+                  }
                 </div>
-                <span>{formatTimeAgo(ticket.timestamp)}</span>
+                <span>{formatTimeAgo(ticket.createdAt)}</span>
               </div>
             </div>
 
@@ -108,7 +114,7 @@ export default function TicketCard({ ticket }) {
                 <ChevronUp className="w-4 h-4" />
               </Button>
               <span className="text-sm font-medium text-gray-700">
-                {ticket.upvotes - ticket.downvotes}
+                {ticket.vote.up - ticket.vote.down}
               </span>
               <Button
                 variant="ghost"
@@ -125,10 +131,10 @@ export default function TicketCard({ ticket }) {
             </div>
 
             {/* Comments */}
-            <div className="flex items-center gap-1 text-gray-600 min-w-[60px] justify-end">
+            {/* <div className="flex items-center gap-1 text-gray-600 min-w-[60px] justify-end">
               <MessageCircle className="w-4 h-4" />
               <span className="text-sm">{ticket.comments}</span>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
