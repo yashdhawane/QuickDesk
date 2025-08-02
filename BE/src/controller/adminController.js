@@ -2,6 +2,7 @@ const Ticket = require('../model/Ticket');
 const User = require('../model/User');
 const TagCategory = require('../model/TagCategory');
 const { Role, Status } = require('../model/enums/enum');
+const RoleRequest = require('../model/RoleRequest');
 
 const getadmin =(req,res)=>{
     res.send('List of admin');
@@ -285,6 +286,76 @@ const getTicketsCountClosedByUser = async (req,res) => {
 }
 
 
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, 'email name profilePic role');
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+const getAllPendingRoleRequests = async (req, res) => {
+  try {
+    const requests = await RoleRequest.find({ status: 'pending' })
+      .populate('userId', 'email name role requestedRole');
+
+    res.json(requests);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+const updateRoleRequestStatus = async (req, res) => {
+  const { requestId, status } = req.body;
+
+  if (!requestId || !status) {
+    return res.status(400).json({ message: 'Request ID and status are required' });
+  }
+
+  try {
+    const updatedRequest = await RoleRequest.findByIdAndUpdate(
+      requestId,
+      { status },
+      { new: true }
+    );
+
+    if(updatedRequest.status === 'accepted') {
+        await User.findByIdAndUpdate(
+          updatedRequest.userId,
+            { role: updatedRequest.requestedRole },
+            { new: true }
+        );
+
+        
+    }else{
+        
+        res.send('Role request rejected');
+      
+    }
+
+    
+
+    if (!updatedRequest) {
+      return res.status(404).json({ message: 'Role request not found' });
+    }
+
+    
+
+
+    
+
+
+
+    res.json({ message: 'Role request updated successfully', request: updatedRequest });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 
 
 module.exports = {getadmin,
@@ -295,4 +366,8 @@ module.exports = {getadmin,
   getUsersWithTicketCount,
   // createTagCategory,
   getSupportUsersWithTicketCount,
-  getTicketsCountClosedByUser};
+  getTicketsCountClosedByUser,
+  getAllUsers,
+    getAllPendingRoleRequests,
+    updateRoleRequestStatus
+};

@@ -13,5 +13,8 @@ userRouter.post('/login', UserController.login);
 userRouter.post('/createTicket', authMiddleware,UserController.createTicket);
 userRouter.post('/createTagCategory', UserController.createTagCategory);
 userRouter.post('/assignTicket/:id', authMiddleware, UserController.assignTicket);
+userRouter.post('/changerole', authMiddleware, UserController.requestRoleChange);
+userRouter.get('/getAllTickets', authMiddleware, UserController.getAllTickets);
+userRouter.post('/updateTicketStatus', authMiddleware, UserController.updateTicketStatus);
 
 module.exports = userRouter;

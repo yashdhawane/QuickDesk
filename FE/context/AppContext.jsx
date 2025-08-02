@@ -190,7 +190,7 @@ export function AppProvider({ children }) {
       const res = await fetch(`${BASE_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // if using cookies/session
+        // credentials: "include", // if using cookies/session
         body: JSON.stringify(credentials),
       });
       if (!res.ok) throw new Error("Login failed");

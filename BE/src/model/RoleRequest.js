@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { Role } = require('../model/enums/enum');
 
 const roleRequestSchema = new mongoose.Schema({
   userId: {
@@ -8,7 +9,7 @@ const roleRequestSchema = new mongoose.Schema({
   },
   requestedRole: {
     type: String,
-    enum: ['user', 'admin', 'moderator'], // or your role enums
+    enum: Role, // or your role enums
     required: true
   },
   status: {
