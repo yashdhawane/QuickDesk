@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -9,12 +9,18 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Menu, User, LogOut } from "lucide-react"
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout } = useApp()
+  const { isAuthenticated, userObj:user, setUserObj, setAccessToken, authenticated, setAuthenticated } = useApp()
+
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleLogout = () => {
-    logout()
+    localStorage.removeItem("quickdesk_token")
+    localStorage.removeItem("quickdesk_user")
+    // Authorization context should also be updated
+    setUserObj(null)
+    setAccessToken(null)
+    setAuthenticated(false)
     router.push("/")
   }
 
@@ -25,7 +31,19 @@ export default function Navbar() {
   ]
 
   // Add dashboard link for admin users
-  const adminNavLinks = user?.role === "Admin" ? [{ href: "/dashboard", label: "Dashboard" }, ...navLinks] : navLinks
+  const adminNavLinks = user?.role === "admin" ? [{ href: "/dashboard", label: "Dashboard" }, ...navLinks] : navLinks
+
+  useEffect(() => {
+    if (authenticated) {
+      const token = localStorage.getItem("quickdesk_token")
+      const user = JSON.parse(localStorage.getItem("quickdesk_user"))
+      if (token && user) {
+        setAccessToken(token)
+        setUserObj(user)
+      }
+    }
+    // console.log("User authenticated:", authenticated);
+  }, [authenticated]);
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -45,11 +63,10 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-gray-600 hover:text-primary transition-colors duration-200 ${
-                  link.label === "Dashboard"
-                    ? "bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent font-semibold"
-                    : ""
-                }`}
+                className={`text-gray-600 hover:text-primary transition-colors duration-200 ${link.label === "Dashboard"
+                  ? "bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent font-semibold"
+                  : ""
+                  }`}
               >
                 {link.label}
               </Link>
@@ -58,7 +75,7 @@ export default function Navbar() {
 
           {/* Auth Section */}
           <div className="hidden md:flex items-center space-x-4">
-            {isAuthenticated ? (
+            {authenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2">
@@ -102,11 +119,10 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-gray-600 hover:text-primary transition-colors duration-200 ${
-                    link.label === "Dashboard"
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent font-semibold"
-                      : ""
-                  }`}
+                  className={`text-gray-600 hover:text-primary transition-colors duration-200 ${link.label === "Dashboard"
+                    ? "bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent font-semibold"
+                    : ""
+                    }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.label}

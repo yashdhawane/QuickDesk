@@ -91,6 +91,7 @@ const login = async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
+        name: user.name,
         role: user.role,
         language: user.language,
         interest: user.interest,
@@ -213,7 +214,7 @@ const createTagCategory = async (req, res) => {
 
 const getAllTickets = async (req, res) => {
   try {
-    const result = await Ticket.find();
+    const result = await Ticket.find().populate("assignTo", "name email").populate("createdBy", "name email")
     res.send(result);
   } catch (err) {
     console.error(err);
@@ -267,6 +268,17 @@ const assignTicket = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+const getAllTags = async (req, res) => {
+  try {
+    const tags = await TagCategory.find();
+    res.status(200).json({ tags });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 module.exports = {
   registerUser,
   login,
@@ -276,4 +288,5 @@ module.exports = {
   requestRoleChange,
   getAllTickets,
   updateTicketStatus,
+  getAllTags
 };

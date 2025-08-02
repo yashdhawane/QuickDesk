@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useReducer, useEffect } from "react";
+import { createContext, useContext, useReducer, useEffect, useState } from "react";
 
 const AppContext = createContext();
+
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -86,103 +87,147 @@ function appReducer(state, action) {
 }
 
 export function AppProvider({ children }) {
+
+  // Added by me
+  const [accessToken, setAccessToken] = useState(null);
+  const [userObj, setUserObj] = useState(null);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [tickets, setTickets] = useState([])
+
+
+  const fetchTickets = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/users/getAllTickets`)
+      if (!response.ok) throw new Error("Failed to fetch tickets")
+      const data = await response.json()
+      console.log(data)
+      setTickets(data)
+    } catch (error) {
+      console.error("Error fetching tickets:", error)
+    }
+  }
+
+
+  useEffect(() => {
+    const token = localStorage.getItem("quickdesk_token");
+    const user = JSON.parse(localStorage.getItem("quickdesk_user"));
+
+    if (token && user) {
+      setAccessToken(token);
+      setUserObj(user);
+      setAuthenticated(true);
+    }
+
+  }, []);
+
+
+
+
+
+  // end
+
+
+
+
   const [state, dispatch] = useReducer(appReducer, initialState);
 
   // Initialize with mock data
-  useEffect(() => {
-    const mockTickets = [
-      {
-        id: "ticket-001",
-        title: "Login Issues with Mobile App",
-        description: "Unable to login using mobile app after recent update",
-        tags: ["mobile", "login", "bug"],
-        status: "Open",
-        author: "john_doe",
-        timestamp: new Date("2024-01-15T10:30:00"),
-        upvotes: 5,
-        downvotes: 1,
-        comments: 3,
-        userVote: null,
-        assignedTo: "Vivek",
-      },
-      {
-        id: "ticket-002",
-        title: "Feature Request: Dark Mode",
-        description:
-          "Would love to see a dark mode option for better user experience",
-        tags: ["feature", "ui", "enhancement"],
-        status: "In Progress",
-        author: "jane_smith",
-        timestamp: new Date("2025-08-2T14:45:00"),
-        upvotes: 12,
-        downvotes: 0,
-        comments: 7,
-        userVote: "up",
-        assignedTo: "Vivek",
-      },
-      {
-        id: "ticket-003",
-        title: "Payment Processing Error",
-        description: "Getting error 500 when trying to process payments",
-        tags: ["payment", "error", "critical"],
-        status: "Resolved",
-        author: "mike_wilson",
-        timestamp: new Date("2024-01-13T09:15:00"),
-        upvotes: 8,
-        downvotes: 2,
-        comments: 15,
-        userVote: null,
-        assignedTo: "Vivek",
-      },
-      {
-        id: "ticket-004",
-        title: "API Documentation Update Needed",
-        description:
-          "The API documentation is outdated and missing new endpoints",
-        tags: ["documentation", "api", "improvement"],
-        status: "Open",
-        author: "sarah_dev",
-        timestamp: new Date("2024-01-12T14:20:00"),
-        upvotes: 3,
-        downvotes: 0,
-        comments: 2,
-        userVote: null,
-        assignedTo: "Vivek",
-      },
-      {
-        id: "ticket-005",
-        title: "Slow Loading Times on Dashboard",
-        description:
-          "Dashboard takes more than 10 seconds to load with large datasets",
-        tags: ["performance", "dashboard", "optimization"],
-        status: "Closed",
-        author: "alex_admin",
-        timestamp: new Date("2024-01-11T11:00:00"),
-        upvotes: 6,
-        downvotes: 1,
-        comments: 9,
-        userVote: "down",
-        assignedTo: "Vivek",
-      },
-      {
-        id: "ticket-006",
-        title: "Slow Loading Times on Dashboard",
-        description:
-          "Dashboard takes more than 10 seconds to load with large datasets",
-        tags: ["performance", "dashboard", "optimization"],
-        status: "Closed",
-        author: "alex_admin",
-        timestamp: new Date("2024-01-11T11:00:00"),
-        upvotes: 6,
-        downvotes: 1,
-        comments: 9,
-        userVote: "down",
-        assignedTo: "Vivek",
-      },
-    ];
+  // useEffect(() => {
+  //   const mockTickets = [
+  //     {
+  //       id: "ticket-001",
+  //       title: "Login Issues with Mobile App",
+  //       description: "Unable to login using mobile app after recent update",
+  //       tags: ["mobile", "login", "bug"],
+  //       status: "Open",
+  //       author: "john_doe",
+  //       timestamp: new Date("2024-01-15T10:30:00"),
+  //       upvotes: 5,
+  //       downvotes: 1,
+  //       comments: 3,
+  //       userVote: null,
+  //       assignedTo: "Vivek",
+  //     },
+  //     {
+  //       id: "ticket-002",
+  //       title: "Feature Request: Dark Mode",
+  //       description:
+  //         "Would love to see a dark mode option for better user experience",
+  //       tags: ["feature", "ui", "enhancement"],
+  //       status: "In Progress",
+  //       author: "jane_smith",
+  //       timestamp: new Date("2025-08-2T14:45:00"),
+  //       upvotes: 12,
+  //       downvotes: 0,
+  //       comments: 7,
+  //       userVote: "up",
+  //       assignedTo: "Vivek",
+  //     },
+  //     {
+  //       id: "ticket-003",
+  //       title: "Payment Processing Error",
+  //       description: "Getting error 500 when trying to process payments",
+  //       tags: ["payment", "error", "critical"],
+  //       status: "Resolved",
+  //       author: "mike_wilson",
+  //       timestamp: new Date("2024-01-13T09:15:00"),
+  //       upvotes: 8,
+  //       downvotes: 2,
+  //       comments: 15,
+  //       userVote: null,
+  //       assignedTo: "Vivek",
+  //     },
+  //     {
+  //       id: "ticket-004",
+  //       title: "API Documentation Update Needed",
+  //       description:
+  //         "The API documentation is outdated and missing new endpoints",
+  //       tags: ["documentation", "api", "improvement"],
+  //       status: "Open",
+  //       author: "sarah_dev",
+  //       timestamp: new Date("2024-01-12T14:20:00"),
+  //       upvotes: 3,
+  //       downvotes: 0,
+  //       comments: 2,
+  //       userVote: null,
+  //       assignedTo: "Vivek",
+  //     },
+  //     {
+  //       id: "ticket-005",
+  //       title: "Slow Loading Times on Dashboard",
+  //       description:
+  //         "Dashboard takes more than 10 seconds to load with large datasets",
+  //       tags: ["performance", "dashboard", "optimization"],
+  //       status: "Closed",
+  //       author: "alex_admin",
+  //       timestamp: new Date("2024-01-11T11:00:00"),
+  //       upvotes: 6,
+  //       downvotes: 1,
+  //       comments: 9,
+  //       userVote: "down",
+  //       assignedTo: "Vivek",
+  //     },
+  //     {
+  //       id: "ticket-006",
+  //       title: "Slow Loading Times on Dashboard",
+  //       description:
+  //         "Dashboard takes more than 10 seconds to load with large datasets",
+  //       tags: ["performance", "dashboard", "optimization"],
+  //       status: "Closed",
+  //       author: "alex_admin",
+  //       timestamp: new Date("2024-01-11T11:00:00"),
+  //       upvotes: 6,
+  //       downvotes: 1,
+  //       comments: 9,
+  //       userVote: "down",
+  //       assignedTo: "Vivek",
+  //     },
+  //   ];
 
-    dispatch({ type: "SET_TICKETS", payload: mockTickets });
-  }, []);
+  //   dispatch({ type: "SET_TICKETS", payload: mockTickets });
+  // }, []);
+
+
 
   const login = async (credentials) => {
     dispatch({ type: "SET_LOADING", payload: true });
@@ -273,7 +318,7 @@ export function AppProvider({ children }) {
 
   const value = {
     ...state,
-    login, // <-- now async
+    login,
     logout,
     addTicket,
     updateTicket,
@@ -282,6 +327,15 @@ export function AppProvider({ children }) {
     setSearchQuery,
     setCurrentPage,
     setTicketsPerPage,
+
+    accessToken,
+    userObj,
+    setAccessToken,
+    setUserObj,
+    authenticated,
+    setAuthenticated,
+    fetchTickets,
+    tickets
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
