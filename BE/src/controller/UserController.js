@@ -1,7 +1,10 @@
 
 const logger = require('../utils/logger');
 const { registerSchema ,loginSchema} = require('../utils/validation/auth.validation');
+const { createTicketSchema } = require('../utils/validation/ticket.validation');
 const User = require('../model/User');
+const Ticket = require('../model/Ticket');
+const TagCategory = require('../model/TagCategory');
 const jwt = require('jsonwebtoken');
 
 
@@ -81,8 +84,64 @@ const login = async (req, res) => {
 }
 
 
+const createTicket = async (req, res) => {
+  try {
+    const validatedData = createTicketSchema.parse(req.body);
+    const { tag } = validatedData;
+
+    if (tag && tag.length > 0) {
+      const existingTags = await TagCategory.find({ categoryName: { $in: tag } });
+      const existingTagNames = existingTags.map(tag => tag.categoryName);
+
+      const invalidTags = tag.filter(t => !existingTagNames.includes(t));
+      if (invalidTags.length > 0) {
+        return res.status(400).json({
+          message: 'Some tags are invalid',
+          invalidTags,
+        });
+      }
+    }
+
+    const newTicket = await Ticket.create({
+      ...validatedData,
+      createdBy: req.user._id, // from JWT middleware
+    });
+
+    res.status(201).json({ message: 'Ticket created successfully', ticket: newTicket });
+  } catch (err) {
+    if (err.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation failed', errors: err.errors });
+    }
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const createTagCategory = async (req, res) => {
+  try {
+    const { categoryName } = req.body;
+
+    if (!categoryName) {
+      return res.status(400).json({ message: 'Category name is required' });
+    }
+
+    const exists = await TagCategory.findOne({ categoryName });
+    if (exists) {
+      return res.status(409).json({ message: 'Tag already exists' });
+    }
+
+    const newTag = await TagCategory.create({ categoryName });
+
+    res.status(201).json({ message: 'Tag created successfully', tag: newTag });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+
+
 const getAllUsers = (req, res) => {
   res.json({ success: true, users });
 };
 
-module.exports = { registerUser, getAllUsers,login };
+module.exports = { registerUser, getAllUsers,login ,createTicket ,createTagCategory };
