@@ -5,9 +5,10 @@ const logger = require('./utils/logger');
 const userRoutes = require('./routes/UserRoute');
 const adminRoutes = require('./routes/adminRoute');
 const connectToDatabase = require('./config/config');
+const cors = require('cors');
 
 dotenv.config();
-
+app.use(cors()); // Enable CORS for all routes
 const app = express();
 app.use(helmet()); // Security middleware
 app.use(express.json());
