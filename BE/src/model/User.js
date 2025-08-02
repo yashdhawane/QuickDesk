@@ -4,7 +4,7 @@ const { Role, Language } = require('./enums');
 const userSchema = new mongoose.Schema({
   role: {
     type: String,
-    enum: Object.values(Role),
+    enum: Object.values(Role),default: Role.USER,
     required: true,
   },
   interest: [{
