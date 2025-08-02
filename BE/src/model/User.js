@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
     enum: Object.values(Role),default: Role.USER,
     required: true,
   },
+  name:{
+    type: String,
+    required: true,
+  }
   interest: [{
     type: String
   }],
