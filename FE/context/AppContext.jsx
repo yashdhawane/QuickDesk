@@ -1,8 +1,10 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useReducer, useEffect } from "react"
+import { createContext, useContext, useReducer, useEffect } from "react";
 
-const AppContext = createContext()
+const AppContext = createContext();
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const initialState = {
   user: null,
@@ -18,7 +20,8 @@ const initialState = {
   searchQuery: "",
   currentPage: 1,
   ticketsPerPage: 5,
-}
+  loading: false,
+};
 
 function appReducer(state, action) {
   switch (action.type) {
@@ -27,59 +30,63 @@ function appReducer(state, action) {
         ...state,
         user: action.payload,
         isAuthenticated: !!action.payload,
-      }
+      };
     case "LOGOUT":
       return {
         ...state,
         user: null,
         isAuthenticated: false,
-      }
+      };
     case "SET_TICKETS":
       return {
         ...state,
         tickets: action.payload,
-      }
+      };
     case "ADD_TICKET":
       return {
         ...state,
         tickets: [action.payload, ...state.tickets],
-      }
+      };
     case "UPDATE_TICKET":
       return {
         ...state,
         tickets: state.tickets.map((ticket) =>
-          ticket.id === action.payload.id ? { ...ticket, ...action.payload } : ticket,
+          ticket.id === action.payload.id
+            ? { ...ticket, ...action.payload }
+            : ticket
         ),
-      }
+      };
     case "SET_FILTERS":
       return {
         ...state,
         filters: { ...state.filters, ...action.payload },
-      }
+      };
     case "SET_SEARCH_QUERY":
       return {
         ...state,
         searchQuery: action.payload,
         currentPage: 1,
-      }
+      };
     case "SET_CURRENT_PAGE":
       return {
         ...state,
         currentPage: action.payload,
-      }
+      };
     case "SET_TICKETS_PER_PAGE":
       return {
         ...state,
         ticketsPerPage: action.payload,
         currentPage: 1,
-      }
+      };
+    case "SET_LOADING":
+      return { ...state, loading: action.payload };
     default:
-      return state
+      return state;
   }
 }
 
 export function AppProvider({ children }) {
-  const [state, dispatch] = useReducer(appReducer, initialState)
+  const [state, dispatch] = useReducer(appReducer, initialState);
 
   // Initialize with mock data
   useEffect(() => {
@@ -101,7 +108,8 @@ export function AppProvider({ children }) {
       {
         id: "ticket-002",
         title: "Feature Request: Dark Mode",
-        description: "Would love to see a dark mode option for better user experience",
+        description:
+          "Would love to see a dark mode option for better user experience",
         tags: ["feature", "ui", "enhancement"],
         status: "In Progress",
         author: "jane_smith",
@@ -129,7 +137,8 @@ export function AppProvider({ children }) {
       {
         id: "ticket-004",
         title: "API Documentation Update Needed",
-        description: "The API documentation is outdated and missing new endpoints",
+        description:
+          "The API documentation is outdated and missing new endpoints",
         tags: ["documentation", "api", "improvement"],
         status: "Open",
         author: "sarah_dev",
@@ -143,7 +152,8 @@ export function AppProvider({ children }) {
       {
         id: "ticket-005",
         title: "Slow Loading Times on Dashboard",
-        description: "Dashboard takes more than 10 seconds to load with large datasets",
+        description:
+          "Dashboard takes more than 10 seconds to load with large datasets",
         tags: ["performance", "dashboard", "optimization"],
         status: "Closed",
         author: "alex_admin",
@@ -157,7 +167,8 @@ export function AppProvider({ children }) {
       {
         id: "ticket-006",
         title: "Slow Loading Times on Dashboard",
-        description: "Dashboard takes more than 10 seconds to load with large datasets",
+        description:
+          "Dashboard takes more than 10 seconds to load with large datasets",
         tags: ["performance", "dashboard", "optimization"],
         status: "Closed",
         author: "alex_admin",
@@ -168,18 +179,38 @@ export function AppProvider({ children }) {
         userVote: "down",
         assignedTo: "Vivek",
       },
-    ]
+    ];
 
-    dispatch({ type: "SET_TICKETS", payload: mockTickets })
-  }, [])
+    dispatch({ type: "SET_TICKETS", payload: mockTickets });
+  }, []);
 
-  const login = (userData) => {
-    dispatch({ type: "SET_USER", payload: userData })
-  }
+  const login = async (credentials) => {
+    dispatch({ type: "SET_LOADING", payload: true });
+    try {
+      const res = await fetch(`${BASE_URL}/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // if using cookies/session
+        body: JSON.stringify(credentials),
+      });
+      if (!res.ok) throw new Error("Login failed");
+      const user = await res.json();
+      console.log("Login successful:", user);
+      dispatch({ type: "SET_USER", payload: user });
+      // Optionally: return user or success
+      return user;
+    } catch (err) {
+      dispatch({ type: "SET_USER", payload: null });
+      // Optionally: handle error (show message, etc.)
+      throw err;
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false });
+    }
+  };
 
   const logout = () => {
-    dispatch({ type: "LOGOUT" })
-  }
+    dispatch({ type: "LOGOUT" });
+  };
 
   const addTicket = (ticket) => {
     const newTicket = {
@@ -190,59 +221,59 @@ export function AppProvider({ children }) {
       downvotes: 0,
       comments: 0,
       userVote: null,
-    }
-    dispatch({ type: "ADD_TICKET", payload: newTicket })
-    return newTicket.id
-  }
+    };
+    dispatch({ type: "ADD_TICKET", payload: newTicket });
+    return newTicket.id;
+  };
 
   const updateTicket = (ticketId, updates) => {
-    dispatch({ type: "UPDATE_TICKET", payload: { id: ticketId, ...updates } })
-  }
+    dispatch({ type: "UPDATE_TICKET", payload: { id: ticketId, ...updates } });
+  };
 
   const voteOnTicket = (ticketId, voteType) => {
-    const ticket = state.tickets.find((t) => t.id === ticketId)
-    if (!ticket) return
+    const ticket = state.tickets.find((t) => t.id === ticketId);
+    if (!ticket) return;
 
-    let upvotes = ticket.upvotes
-    let downvotes = ticket.downvotes
-    let userVote = voteType
+    let upvotes = ticket.upvotes;
+    let downvotes = ticket.downvotes;
+    let userVote = voteType;
 
     if (ticket.userVote === voteType) {
       // Remove vote
-      if (voteType === "up") upvotes--
-      else downvotes--
-      userVote = null
+      if (voteType === "up") upvotes--;
+      else downvotes--;
+      userVote = null;
     } else {
       // Add new vote, remove old if exists
-      if (ticket.userVote === "up") upvotes--
-      else if (ticket.userVote === "down") downvotes--
+      if (ticket.userVote === "up") upvotes--;
+      else if (ticket.userVote === "down") downvotes--;
 
-      if (voteType === "up") upvotes++
-      else downvotes++
+      if (voteType === "up") upvotes++;
+      else downvotes++;
     }
 
-    updateTicket(ticketId, { upvotes, downvotes, userVote })
-  }
+    updateTicket(ticketId, { upvotes, downvotes, userVote });
+  };
 
   const setFilters = (filters) => {
-    dispatch({ type: "SET_FILTERS", payload: filters })
-  }
+    dispatch({ type: "SET_FILTERS", payload: filters });
+  };
 
   const setSearchQuery = (query) => {
-    dispatch({ type: "SET_SEARCH_QUERY", payload: query })
-  }
+    dispatch({ type: "SET_SEARCH_QUERY", payload: query });
+  };
 
   const setCurrentPage = (page) => {
-    dispatch({ type: "SET_CURRENT_PAGE", payload: page })
-  }
+    dispatch({ type: "SET_CURRENT_PAGE", payload: page });
+  };
 
   const setTicketsPerPage = (count) => {
-    dispatch({ type: "SET_TICKETS_PER_PAGE", payload: count })
-  }
+    dispatch({ type: "SET_TICKETS_PER_PAGE", payload: count });
+  };
 
   const value = {
     ...state,
-    login,
+    login, // <-- now async
     logout,
     addTicket,
     updateTicket,
@@ -251,15 +282,15 @@ export function AppProvider({ children }) {
     setSearchQuery,
     setCurrentPage,
     setTicketsPerPage,
-  }
+  };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {
-  const context = useContext(AppContext)
+  const context = useContext(AppContext);
   if (!context) {
-    throw new Error("useApp must be used within an AppProvider")
+    throw new Error("useApp must be used within an AppProvider");
   }
-  return context
+  return context;
 }

@@ -22,52 +22,15 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      let userData
-
-      // Check for admin credentials
-      if (loginData.email === "admin@quickdesk.com" && loginData.password === "admin123") {
-        userData = {
-          id: "admin-1",
-          name: "Admin User",
-          email: loginData.email,
-          role: "Admin",
-          categoryInterest: "All Categories",
-          language: "English",
-          avatar: null,
-        }
-      }
-      // Check for end user credentials
-      else if (loginData.email === "user@quickdesk.com" && loginData.password === "user123") {
-        userData = {
-          id: "user-1",
-          name: "John Doe",
-          email: loginData.email,
-          role: "End User",
-          categoryInterest: "General",
-          language: "English",
-          avatar: null,
-        }
-      }
-      // Default user for any other credentials
-      else {
-        userData = {
-          id: "1",
-          name: "Demo User",
-          email: loginData.email,
-          role: "End User",
-          categoryInterest: "General",
-          language: "English",
-          avatar: null,
-        }
-      }
-
-      login(userData)
+    try {
+      // Use backend login from context
+      await login(loginData)
       setIsLoading(false)
-      router.push("/tickets")
-    }, 1000)
+      router.push("/ticket")
+    } catch (err) {
+      setIsLoading(false)
+      alert("Login failed. Please check your credentials.")
+    }
   }
 
   const handleSignup = async (e) => {
@@ -79,7 +42,7 @@ export default function LoginPage() {
 
     setIsLoading(true)
 
-    // Simulate API call
+    // Simulate API call for signup (replace with real API if available)
     setTimeout(() => {
       const userData = {
         id: "1",
