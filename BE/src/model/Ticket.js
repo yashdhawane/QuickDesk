@@ -8,10 +8,10 @@ const ticketSchema = new mongoose.Schema({
   },
   description: String,
   tag: [String],
-  assignTo: [{
+  assignTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-  }],
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

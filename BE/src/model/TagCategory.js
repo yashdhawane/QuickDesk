@@ -4,11 +4,6 @@ const tagCategorySchema = new mongoose.Schema({
   categoryName: {
     type: String,
     required: true,
-  },
-  ticketId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Ticket',
-    required: true,
   }
 });
 
