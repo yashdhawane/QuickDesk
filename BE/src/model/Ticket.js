@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Status } = require('./enums/enum');
+const { Status } = require('../model/enums/enum');
 
 const ticketSchema = new mongoose.Schema({
   title: {
