@@ -5,7 +5,6 @@ const { createTicketSchema } = require('../utils/validation/ticket.validation');
 const User = require('../model/User');
 const Ticket = require('../model/Ticket');
 const TagCategory = require('../model/TagCategory');
-
 const jwt = require('jsonwebtoken');
 
 
@@ -176,25 +175,4 @@ const assignTicket = async (req, res) => {
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
-    if (ticket.assignTo && ticket.assignTo.includes(userId)) {
-      return res.status(400).json({ message: 'You have already assigned this ticket.' });
-    }
-
-    // Assign the ticket
-    ticket.assignTo.push(userId);
-    await ticket.save();
-
-    res.status(200).json({ message: 'Ticket assigned successfully', ticket });
-  } catch (err) {
-    res.status(500).json({ message: 'Internal Server Error', error: err.message });
-  }
-};
-
-
-
-
-
-
-
-
-module.exports = { registerUser, getAllUsers,login ,createTicket ,createTagCategory ,assignTicket};
+module.exports = { registerUser, getAllUsers,login ,createTicket ,createTagCategory };
