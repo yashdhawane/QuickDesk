@@ -1,5 +1,7 @@
 const Ticket = require('../model/Ticket');
-
+const User = require('../model/User');
+const TagCategory = require('../model/TagCategory');
+const { Role, Status } = require('../model/enums/enum');
 
 const getadmin =(req,res)=>{
     res.send('List of admin');
@@ -125,4 +127,172 @@ const getTicketCountsByInterval = async (req, res) => {
   }
 };
 
-module.exports = {getadmin,getTicketsCounts,getTicketCountPerUser,getTicketsFromLastXHours,getTicketCountsByInterval};
+const getUsersWithTicketCount = async (req, res) => {
+  try {
+    const result = await User.aggregate([
+      {
+        $match: { role:  Role.USER}
+      },
+      {
+        $lookup: {
+          from: "tickets",
+          localField: "_id",
+          foreignField: "createdBy",
+          as: "tickets"
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          email: 1,
+          ticketCount: { $size: "$tickets" }
+        }
+      },
+      {
+        $sort: { ticketCount: -1 }
+      }
+    ]);
+
+    const formatted = result.map(user => ({
+      email: user.email,
+      ticketCount: user.ticketCount
+    }));
+    res.json(formatted);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+
+const getSupportUsersWithTicketCount = async (req, res) => {
+  try {
+    const result = await User.aggregate([
+  {
+    $match: { role: Role.SUPPORT }
+  },
+  {
+    $lookup: {
+      from: "tickets",
+      localField: "_id",
+      foreignField: "assignTo",
+      as: "tickets"
+    }
+  },
+  {
+    $project: {
+      email: 1,
+      openCount: {
+        $size: {
+          $filter: {
+            input: "$tickets",
+            as: "ticket",
+            cond: { $eq: ["$$ticket.status", Status.CLOSED] }
+          }
+        }
+      },
+      closedCount: {
+        $size: {
+          $filter: {
+            input: "$tickets",
+            as: "ticket",
+            cond: { $eq: ["$$ticket.status", Status.CLOSED] }
+          }
+        }
+      },
+      inProressCount: {
+        $size: {
+          $filter: {
+            input: "$tickets",
+            as: "ticket",
+            cond: { $eq: ["$$ticket.status", Status.IN_PROGRESS] }
+          }
+        }
+      }
+    }
+  }
+]);
+
+    // const formatted = result.map(user => ({
+    //   email: user.email,
+    //   ticketCount: user.ticketCount
+    // }));
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+// const createTagCategory = async (req, res) => {
+//   try {
+//     const { categoryName } = req.body;
+//     if (!categoryName) {
+//       return res.status(400).json({ message: 'Category name is required' });
+//     }
+
+//     const exists = await TagCategory.findOne({ categoryName });
+//     if (exists) {
+//       return res.status(409).json({ message: 'Tag already exists' });
+//     }
+
+//     const newTag = await TagCategory.create({ categoryName });
+
+//     res.status(201).json({ message: 'Tag created successfully', tag: newTag });
+//   } catch (err) {
+//     res.status(500).json({ message: 'Server error', error: err.message });
+//   }
+// };
+
+
+const getTicketsCountClosedByUser = async (req,res) => {
+  try {
+    const result = await User.aggregate([
+  {
+    $match: { role: Role.SUPPORT }
+  },
+  {
+    $lookup: {
+      from: "tickets",
+      localField: "_id",
+      foreignField: "createdBy",
+      as: "tickets"
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      email: 1,
+      closedTicketCount: {
+        $size: {
+          $filter: {
+            input: "$tickets",
+            as: "ticket",
+            cond: { $eq: ["$$ticket.status", Status.CLOSED] }
+          }
+        }
+      }
+    }
+  }
+]);
+     res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+}
+
+
+
+
+module.exports = {getadmin,
+  getTicketsCounts,
+  getTicketCountPerUser,
+  getTicketsFromLastXHours,
+  getTicketCountsByInterval,
+  getUsersWithTicketCount,
+  // createTagCategory,
+  getSupportUsersWithTicketCount,
+  getTicketsCountClosedByUser};
