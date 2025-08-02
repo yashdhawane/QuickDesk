@@ -8,6 +8,7 @@ userRouter.get('/', (req, res) => {
 });
 
 userRouter.post('/register', UserController.registerUser);
+userRouter.post('/login', UserController.login);
 
 
 
