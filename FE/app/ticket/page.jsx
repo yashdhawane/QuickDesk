@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,13 +11,21 @@ import { useApp } from "@/context/AppContext"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
 import TicketCard from "@/components/tickets/TicketCard"
+import TicketFilters from "@/components/tickets/TicketFilters"
 import { Search, Plus, Filter, ChevronLeft, ChevronRight } from "lucide-react"
 import { BASE_URL } from "@/lib/constants/constants"
 
 export default function TicketsPage() {
+  // Track render count for debugging
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+  console.log("TicketsPage render count:", renderCount.current);
 
+  // Local state for categories and mobile filter sidebar
   const [categories, setCategories] = useState([])
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
 
+  // Get state and actions from context
   const {
     tickets,
     fetchTickets,
@@ -25,19 +33,19 @@ export default function TicketsPage() {
     searchQuery,
     currentPage,
     ticketsPerPage,
-    user,
-    setFilters,
+    updateFilters, // <--- Only use this!
     setSearchQuery,
     setCurrentPage,
     setTicketsPerPage,
-  } = useApp()
+    userObj: user
+  } = useApp();
 
+  // Fetch categories/tags from API
   const fetchTags = async () => {
     try {
       const response = await fetch(`${BASE_URL}/users/getAllTags`)
       if (!response.ok) throw new Error("Failed to fetch tags")
       const data = await response.json()
-      // console.log(data)
       let categories_list = data.tags.map(tag => tag.categoryName)
       setCategories(categories_list)
     } catch (error) {
@@ -45,58 +53,63 @@ export default function TicketsPage() {
     }
   }
 
-
+  // Fetch tickets and tags on mount
   useEffect(() => {
     fetchTags()
     fetchTickets()
   }, [])
 
-
-
-  // console.log(tickets)
-
-  const [showMobileFilters, setShowMobileFilters] = useState(false)
-
-  const statuses = ["Open", "In Progress", "Resolved", "Closed"]
-  // const sortOptions = ["Most Comments", "Most Upvotes", "Newest", "Oldest"]
+  // Status and sort options
+  const statuses = [
+    { value: "open", label: "Open" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "resolved", label: "Resolved" },
+    { value: "closed", label: "Closed" },
+  ];
   const sortOptions = ["Newest", "Oldest"]
 
+  // Filtering logic
   const filteredTickets = useMemo(() => {
     let filtered = [...tickets]
 
-    // Apply search filter
+    // Search filter
     if (searchQuery) {
+      // console.log(filtered)
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
         (ticket) =>
-          ticket.id.toLowerCase().includes(query) ||
-          ticket.title.toLowerCase().includes(query) ||
-          ticket.description.toLowerCase().includes(query) ||
-          ticket.author.toLowerCase().includes(query) ||
-          ticket.tags.some((tag) => tag.toLowerCase().includes(query)),
+          //           {
+          // console.log(ticket.createdBy?.name.toLowerCase().includes(query))
+          //         }
+          ticket._id.toLowerCase().includes(query) ||
+          ticket.title?.toLowerCase().includes(query) ||
+          ticket.description?.toLowerCase().includes(query) ||
+          ticket.createdBy?.name.toLowerCase().includes(query) ||
+          (Array.isArray(ticket.tag) && ticket?.tag.some((tag) => tag.toLowerCase().includes(query)))
       )
     }
 
-    // Apply checkbox filters
+    // Checkbox filters
+    // console.log(filtered)
+    // console.log(user)
     if (filters.showOpenOnly) {
-      filtered = filtered.filter((ticket) => ticket.status === "Open")
+      filtered = filtered.filter((ticket) => ticket.status === "open")
     }
-
     if (filters.showMyTicketsOnly && user) {
-      filtered = filtered.filter((ticket) => ticket.author === user.name)
+      filtered = filtered.filter((ticket) => ticket.createdBy._id === user.id);
     }
-
-    // Apply category filters
     if (filters.categories.length > 0) {
-      filtered = filtered.filter((ticket) => ticket.tags.some((tag) => filters.categories.includes(tag)))
+      filtered = filtered.filter(
+        (ticket) =>
+          Array.isArray(ticket.tag) &&
+          ticket.tag.some((tag) => filters.categories.includes(tag))
+      )
     }
-
-    // Apply status filters
     if (filters.statuses.length > 0) {
-      filtered = filtered.filter((ticket) => filters.statuses.includes(ticket.status))
+      filtered = filtered.filter((ticket) => filters.statuses.includes(ticket.status));
     }
 
-    // Apply sorting
+    // Sorting
     switch (filters.sortBy) {
       case "Most Comments":
         filtered.sort((a, b) => b.comments - a.comments)
@@ -105,10 +118,10 @@ export default function TicketsPage() {
         filtered.sort((a, b) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes))
         break
       case "Newest":
-        filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         break
       case "Oldest":
-        filtered.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+        filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         break
       default:
         break
@@ -117,31 +130,33 @@ export default function TicketsPage() {
     return filtered
   }, [tickets, searchQuery, filters, user])
 
-  // Pagination
+  // Pagination logic
   const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage)
   const startIndex = (currentPage - 1) * ticketsPerPage
   const paginatedTickets = filteredTickets.slice(startIndex, startIndex + ticketsPerPage)
 
+  // Filter change handlers
   const handleFilterChange = (key, value) => {
-    setFilters({ [key]: value })
-  }
+    updateFilters({ [key]: value });
+  };
 
   const handleCategoryToggle = (category) => {
     const newCategories = filters.categories.includes(category)
       ? filters.categories.filter((c) => c !== category)
-      : [...filters.categories, category]
-    handleFilterChange("categories", newCategories)
-  }
+      : [...filters.categories, category];
+    updateFilters({ categories: newCategories });
+  };
 
-  const handleStatusToggle = (status) => {
-    const newStatuses = filters.statuses.includes(status)
-      ? filters.statuses.filter((s) => s !== status)
-      : [...filters.statuses, status]
-    handleFilterChange("statuses", newStatuses)
-  }
+  const handleStatusToggle = (statusValue) => {
+    const newStatuses = filters.statuses.includes(statusValue)
+      ? filters.statuses.filter((s) => s !== statusValue)
+      : [...filters.statuses, statusValue];
+    updateFilters({ statuses: newStatuses });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
       <Navbar />
 
       <div className="container mx-auto px-4 py-8">
@@ -149,102 +164,17 @@ export default function TicketsPage() {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Filters Sidebar */}
             <div className="lg:w-80">
-              <Card className="sticky top-24">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Filter className="w-5 h-5" />
-                    Filters
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="lg:hidden"
-                    onClick={() => setShowMobileFilters(!showMobileFilters)}
-                  >
-                    {showMobileFilters ? "Hide" : "Show"}
-                  </Button>
-                </CardHeader>
-                <CardContent className={`space-y-6 ${showMobileFilters ? "block" : "hidden lg:block"}`}>
-                  {/* Checkbox Filters */}
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="my-tickets"
-                        checked={filters.showMyTicketsOnly}
-                        onCheckedChange={(checked) => handleFilterChange("showMyTicketsOnly", checked)}
-                      />
-                      <label htmlFor="my-tickets" className="text-sm font-medium">
-                        Show My Tickets Only
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Categories */}
-                  {
-                    categories.length > 0 && (
-                      <div>
-                        <h3 className="font-medium mb-3">Categories</h3>
-                        <div className="space-y-2">
-                          {categories.map((category) => (
-                            <div key={category} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`category-${category}`}
-                                checked={filters.categories.includes(category)}
-                                onCheckedChange={() => handleCategoryToggle(category)}
-                              />
-                              <label htmlFor={`category-${category}`} className="text-sm">
-                                {category}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  {/* Status */}
-                  <div>
-                    <h3 className="font-medium mb-3">Status</h3>
-                    <div className="space-y-2">
-                      {statuses.map((status) => (
-                        <div key={status} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`status-${status}`}
-                            checked={filters.statuses.includes(status)}
-                            onCheckedChange={() => handleStatusToggle(status)}
-                          />
-                          <label htmlFor={`status-${status}`} className="text-sm">
-                            {status}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Sort By */}
-                  <div>
-                    <h3 className="font-medium mb-3">Sort By</h3>
-                    <div className="space-y-2">
-                      {sortOptions.map((option) => (
-                        <div key={option} className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id={`sort-${option}`}
-                            name="sortBy"
-                            value={option}
-                            checked={filters.sortBy === option}
-                            onChange={(e) => handleFilterChange("sortBy", e.target.value)}
-                            className="w-4 h-4 text-primary"
-                          />
-                          <label htmlFor={`sort-${option}`} className="text-sm">
-                            {option}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <TicketFilters
+                filters={filters}
+                categories={categories}
+                statuses={statuses}
+                sortOptions={sortOptions}
+                showMobileFilters={showMobileFilters}
+                setShowMobileFilters={setShowMobileFilters}
+                handleFilterChange={handleFilterChange}
+                handleCategoryToggle={handleCategoryToggle}
+                handleStatusToggle={handleStatusToggle}
+              />
             </div>
 
             {/* Main Content */}
@@ -275,7 +205,7 @@ export default function TicketsPage() {
                 </p>
               </div>
 
-              {console.log(paginatedTickets)}
+
               {/* Tickets List */}
               <div className="space-y-4 mb-8 flex flex-col">
                 {paginatedTickets.length > 0 ? (
@@ -370,6 +300,7 @@ export default function TicketsPage() {
         </div>
       </div>
 
+      {/* Footer */}
       <Footer />
     </div>
   )

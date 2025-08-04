@@ -44,6 +44,22 @@ export default function TicketCard({ ticket }) {
     voteOnTicket(ticket._id, voteType);
   };
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "open":
+        return "Open";
+      case "in_progress":
+        return "In Progress";
+      case "resolved":
+        return "Resolved";
+      case "closed":
+        return "Closed";
+      default:
+      // Fallback: capitalize first letter
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
   return (
     <Link href={`/ticket/${ticket._id}`} className="">
       <Card className="hover:shadow-md transition-shadow duration-200 cursor-pointer">
@@ -59,14 +75,12 @@ export default function TicketCard({ ticket }) {
                 <h3 className="text-gray-500 text-sm">
                   <span
                     className={`status-dot ${
-                      ticket.status.toLowerCase() === "open"
+                      ticket.status === "open"
                         ? "status-open"
-                        : `status-${ticket.status
-                            .toLowerCase()
-                            .replace(" ", "-")}`
+                        : `status-${ticket.status.replace("_", "-")}`
                     }`}
                   ></span>
-                  {ticket.status}
+                  {getStatusLabel(ticket.status)}
                 </h3>
               </div>
 

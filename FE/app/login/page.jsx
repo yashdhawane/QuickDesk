@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -15,13 +15,21 @@ import { BASE_URL } from "@/lib/constants/constants"
 import { useApp } from "@/context/AppContext"
 
 export default function LoginPage() {
+  const { setUserObj, setAccessToken, setAuthenticated, userObj:user } = useApp()
+
+  if (user) {
+    // If user is already authenticated, redirect to ticket page
+    const router = useRouter()
+    router.push("/ticket")
+    return null
+  }
+
   const [loginData, setLoginData] = useState({ email: "", password: "" })
   const [signupData, setSignupData] = useState({ name: "", email: "", password: "", confirmPassword: "" })
   const [isLoading, setIsLoading] = useState(false)
   const [errorText, setErrorText] = useState("")
   const router = useRouter()
 
-  const { setUserObj, setAccessToken, setAuthenticated } = useApp()
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -37,7 +45,7 @@ export default function LoginPage() {
       localStorage.setItem("quickdesk_token", token)
       localStorage.setItem("quickdesk_user", JSON.stringify(user))
 
-      
+
       // saving the data in state variables
       setAuthenticated(true)
       setUserObj(user)

@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Menu, User, LogOut } from "lucide-react"
 
 export default function Navbar() {
-  const { isAuthenticated, userObj:user, setUserObj, setAccessToken, authenticated, setAuthenticated } = useApp()
+  const { userObj:user, setUserObj, setAccessToken, authenticated, setAuthenticated } = useApp()
 
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -74,11 +74,11 @@ export default function Navbar() {
           </div>
 
           {/* Auth Section */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4 ">
             {authenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
+                  <Button variant="ghost" className="flex items-center space-x-2 ">
                     <User className="w-4 h-4" />
                     <span>{user?.name || "User"}</span>
                   </Button>
@@ -129,7 +129,7 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-gray-200">
-                {isAuthenticated ? (
+                {authenticated ? (
                   <div className="flex flex-col space-y-2">
                     <Link
                       href="/profile"

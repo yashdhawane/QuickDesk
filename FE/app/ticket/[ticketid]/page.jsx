@@ -15,7 +15,7 @@ import { ArrowLeft, ChevronUp, ChevronDown, MessageCircle, Share2, User, Clock, 
 
 export default function TicketDetailPage() {
   const { ticketid } = useParams()
-  const { tickets, voteOnTicket, user } = useApp()
+  const { tickets, voteOnTicket, userObj:user } = useApp()
   const [ticket, setTicket] = useState(null)
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState("")

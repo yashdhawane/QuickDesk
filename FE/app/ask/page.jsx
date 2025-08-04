@@ -15,7 +15,7 @@ import Footer from "@/components/layout/Footer"
 import { ArrowLeft, Plus, X } from "lucide-react"
 
 export default function AskPage() {
-  const { addTicket, user, isAuthenticated } = useApp()
+  const { addTicket, userObj: user, authenticated } = useApp()
   const router = useRouter()
 
   const [formData, setFormData] = useState({
@@ -26,7 +26,7 @@ export default function AskPage() {
   const [currentTag, setCurrentTag] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  if (!isAuthenticated) {
+  if (!authenticated) {
     router.push("/login")
     return null
   }
@@ -57,25 +57,23 @@ export default function AskPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setIsSubmitting(true)
+    // setIsSubmitting(true)
 
     // Simulate API call
-    setTimeout(() => {
-      const ticketData = {
-        title: formData.title,
-        description: formData.description,
-        tags: formData.tags,
-        status: "Open",
-        author: user?.name || "Anonymous",
-      }
+    const ticketData = {
+      title: formData.title,
+      description: formData.description,
+      tag: formData.tags
+    }
 
-      const ticketId = addTicket(ticketData)
-      setIsSubmitting(false)
+    const newTicket = addTicket(ticketData)
+    const ticketId = await newTicket // Wait for the ticket to be added
+    console.log(newTicket, " : new ticket created")
+    // setIsSubmitting(false)
 
-      // Show success message and redirect
-      alert(`Ticket created successfully! ID: ${ticketId}`)
-      router.push(`/ticket/${ticketId}`)
-    }, 1000)
+    // Show success message and redirect
+    // alert(`Ticket created successfully!newTicket: ${ticketId}`)
+    // router.push(`/ticket/${ticketId}`)
   }
 
   const suggestedTags = [

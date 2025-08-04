@@ -128,6 +128,7 @@ const createTicket = async (req, res) => {
       ...validatedData,
       createdBy: req.user.userId, // from JWT middleware
     });
+    console.log(newTicket, " : new ticket created");
 
     res
       .status(201)
@@ -165,14 +166,15 @@ const requestRoleChange = async (req, res) => {
 const updateTicketStatus = async (req, res) => {
   const { ticketId, status } = req.body;
   const userId = req.user.userId; // from JWT middleware
+  // console.log(userId, " : userid from jwt")
   const role = req.user.role; // from JWT middleware
 
   try {
     const ticket = await Ticket.findById(ticketId);
 
     if (!ticket) return res.status(404).json({ message: "Ticket not found" });
-
-    if (role !== "support" && role !== "admin" && ticket.createdBy !== userId) {
+    // console.log(ticket.createdBy.toString(), " : userid from ticket")
+    if (role !== "support" && role !== "admin" && ticket.createdBy.toString() !== userId) {
       return res
         .status(403)
         .json({ message: "You can only update tickets assigned to you" });
